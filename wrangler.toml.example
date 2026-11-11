@@ -1,0 +1,21 @@
+# Exemplo de configuração do Cloudflare Workers com D1
+# Ajuste conforme sua conta e projeto no Cloudflare
+
+name = "nuxt-app"
+type = "javascript"
+main = "dist/server/index.mjs"
+compatibility_date = "2024-01-01"
+
+# Configuração do D1 Database
+# O binding "DB" será acessível como event.context.cloudflare.env.DB
+[[d1_databases]]
+binding = "DB"
+database_name = "acompanhamento_descricoes"  # Substitua pelo nome do seu banco
+database_id = "seu-database-id-aqui"         # Substitua pelo ID do seu banco
+
+# Configuração de variáveis de ambiente locais (desenvolvimento)
+[env.development]
+vars = { ENVIRONMENT = "development" }
+
+[env.production]
+vars = { ENVIRONMENT = "production" }

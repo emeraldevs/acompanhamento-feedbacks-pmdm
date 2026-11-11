@@ -1,0 +1,16 @@
+name = "acompanhamento-feedbacks-pmdm"
+type = "service"
+compatibility_date = "2024-01-01"
+
+# Configuração do D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "acompanhamento_feedbacks"
+database_id = "bfe91a8e-1c99-43eb-b8d6-0a18a44d78ec"
+
+# Variáveis de ambiente
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.development]
+vars = { ENVIRONMENT = "development" }
