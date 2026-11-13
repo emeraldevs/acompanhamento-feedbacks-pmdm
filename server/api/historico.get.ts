@@ -5,8 +5,7 @@ interface Feedback {
   unidade: string
   nota: number
   descricao: string
-  nome: string | null
-  telefone: string | null
+  created_at: string
 }
 
 const validateFeedback = (obj: unknown): obj is Feedback => {
@@ -19,8 +18,8 @@ const validateFeedback = (obj: unknown): obj is Feedback => {
     && typeof feedback.unidade === 'string'
     && typeof feedback.nota === 'number'
     && typeof feedback.descricao === 'string'
-    && (typeof feedback.nome === 'string' || feedback.nome === null)
-    && (typeof feedback.telefone === 'string' || feedback.telefone === null)
+    && typeof feedback.created_at === 'string'
+    && !Number.isNaN(Date.parse(feedback.created_at))
   )
 }
 
@@ -40,8 +39,7 @@ export default defineEventHandler(async (event): Promise<Feedback[]> => {
           unidade: 'CENTRO MUNICIPAL DE SAÚDE',
           nota: 10,
           descricao: 'Interface muito intuitiva e fácil de usar',
-          nome: null,
-          telefone: null
+          created_at: '2026-11-13T12:00:00.000Z'
         },
         {
           id: 5,
@@ -50,8 +48,7 @@ export default defineEventHandler(async (event): Promise<Feedback[]> => {
           unidade: 'CENTRO MUNICIPAL DE SAÚDE',
           nota: 6,
           descricao: 'Gostaria de mais opções de filtro',
-          nome: null,
-          telefone: null
+          created_at: '2026-11-12T15:30:00.000Z'
         },
         {
           id: 4,
@@ -60,8 +57,7 @@ export default defineEventHandler(async (event): Promise<Feedback[]> => {
           unidade: 'CENTRO MUNICIPAL DE SAÚDE',
           nota: 10,
           descricao: 'Performance excelente, carrega muito rápido',
-          nome: null,
-          telefone: null
+          created_at: '2026-11-11T09:45:00.000Z'
         },
         {
           id: 3,
@@ -70,8 +66,7 @@ export default defineEventHandler(async (event): Promise<Feedback[]> => {
           unidade: 'CENTRO MUNICIPAL DE SAÚDE',
           nota: 8,
           descricao: 'Alguns botões poderiam ser maiores',
-          nome: null,
-          telefone: null
+          created_at: '2026-11-10T18:20:00.000Z'
         },
         {
           id: 2,
@@ -80,8 +75,7 @@ export default defineEventHandler(async (event): Promise<Feedback[]> => {
           unidade: 'CENTRO MUNICIPAL DE SAÚDE',
           nota: 10,
           descricao: 'Excelente suporte técnico',
-          nome: null,
-          telefone: null
+          created_at: '2026-11-09T14:10:00.000Z'
         },
         {
           id: 1,
@@ -90,14 +84,13 @@ export default defineEventHandler(async (event): Promise<Feedback[]> => {
           unidade: 'CENTRO MUNICIPAL DE SAÚDE',
           nota: 9,
           descricao: 'Layout responsivo funciona bem em mobile',
-          nome: null,
-          telefone: null
+          created_at: '2026-11-08T11:05:00.000Z'
         }
       ]
       validFeedbacks = mockData
     } else {
       const statement = db.prepare(
-        'SELECT id, tipo, regiao, unidade, nota, descricao, nome, telefone FROM feedbacks ORDER BY id DESC LIMIT 1000'
+        'SELECT id, tipo, regiao, unidade, nota, descricao, created_at FROM feedbacks ORDER BY id DESC LIMIT 1000'
       )
       const result = await statement.all()
 

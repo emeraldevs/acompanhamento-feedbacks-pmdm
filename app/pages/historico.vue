@@ -6,11 +6,11 @@ interface Feedback {
   unidade: string
   nota: number
   descricao: string
-  nome: string | null
-  telefone: string | null
+  created_at: string
 }
 
 const refreshInterval = 15000
+const readFeedbackStorageKey = 'historico-feedbacks-lidos'
 
 definePageMeta({
   layout: 'default'
@@ -28,6 +28,7 @@ useHead({
 
 const searchQuery = ref('')
 const lastUpdated = ref<Date | null>(null)
+const readFeedbackIds = ref(new Set<number>())
 
 const { data: feedbacks, pending, error, refresh } = useAsyncData<Feedback[]>(
   'historico',
@@ -58,9 +59,38 @@ const clearSearch = () => {
   searchQuery.value = ''
 }
 
+const toggleFeedbackRead = (id: number) => {
+  if (readFeedbackIds.value.has(id)) {
+    readFeedbackIds.value.delete(id)
+  } else {
+    readFeedbackIds.value.add(id)
+  }
+
+  try {
+    localStorage.setItem(readFeedbackStorageKey, JSON.stringify([...readFeedbackIds.value]))
+  } catch (storageError) {
+    console.error('Erro ao salvar o estado de leitura dos feedbacks:', storageError)
+  }
+}
+
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 
 onMounted(() => {
+  try {
+    const storedReadFeedbackIds: unknown = JSON.parse(
+      localStorage.getItem(readFeedbackStorageKey) ?? '[]'
+    )
+    if (
+      !Array.isArray(storedReadFeedbackIds)
+      || storedReadFeedbackIds.some(id => typeof id !== 'number')
+    ) {
+      throw new Error('Formato inválido para os estados de leitura salvos')
+    }
+    readFeedbackIds.value = new Set(storedReadFeedbackIds)
+  } catch (storageError) {
+    console.error('Erro ao carregar o estado de leitura dos feedbacks:', storageError)
+  }
+
   lastUpdated.value = new Date()
   refreshTimer = setInterval(() => {
     if (!pending.value) void refreshFeedbacks()
@@ -78,6 +108,13 @@ const formatUpdatedAt = (date: Date): string =>
     second: '2-digit',
     timeZone: 'America/Sao_Paulo'
   }).format(date)
+
+const formatFeedbackDate = (date: string): string =>
+  new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo'
+  }).format(new Date(date))
 </script>
 
 <template>
@@ -281,6 +318,12 @@ const formatUpdatedAt = (date: Date): string =>
                 scope="col"
                 class="whitespace-nowrap px-4 py-3 font-semibold"
               >
+                Data e horário
+              </th>
+              <th
+                scope="col"
+                class="whitespace-nowrap px-4 py-3 font-semibold"
+              >
                 Tipo
               </th>
               <th
@@ -309,15 +352,9 @@ const formatUpdatedAt = (date: Date): string =>
               </th>
               <th
                 scope="col"
-                class="whitespace-nowrap px-4 py-3 font-semibold"
+                class="whitespace-nowrap px-4 py-3 text-center font-semibold"
               >
-                Nome
-              </th>
-              <th
-                scope="col"
-                class="whitespace-nowrap px-4 py-3 font-semibold"
-              >
-                Telefone
+                Lida
               </th>
             </tr>
           </thead>
@@ -329,6 +366,11 @@ const formatUpdatedAt = (date: Date): string =>
             >
               <td class="whitespace-nowrap px-4 py-3">
                 {{ feedback.id }}
+              </td>
+              <td class="whitespace-nowrap px-4 py-3">
+                <time :datetime="feedback.created_at">
+                  {{ formatFeedbackDate(feedback.created_at) }}
+                </time>
               </td>
               <td class="whitespace-nowrap px-4 py-3">
                 {{ feedback.tipo }}
@@ -345,11 +387,19 @@ const formatUpdatedAt = (date: Date): string =>
               <td class="min-w-72 whitespace-pre-wrap px-4 py-3">
                 {{ feedback.descricao }}
               </td>
-              <td class="whitespace-nowrap px-4 py-3">
-                {{ feedback.nome ?? '—' }}
-              </td>
-              <td class="whitespace-nowrap px-4 py-3">
-                {{ feedback.telefone ?? '—' }}
+              <td class="whitespace-nowrap px-4 py-3 text-center">
+                <label class="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600"
+                    :checked="readFeedbackIds.has(feedback.id)"
+                    :aria-label="`${readFeedbackIds.has(feedback.id) ? 'Marcar como não lido' : 'Marcar como lido'}: feedback ${feedback.id}`"
+                    @change="toggleFeedbackRead(feedback.id)"
+                  >
+                  <span class="sr-only">
+                    {{ readFeedbackIds.has(feedback.id) ? 'Lida' : 'Não lida' }}
+                  </span>
+                </label>
               </td>
             </tr>
           </tbody>
