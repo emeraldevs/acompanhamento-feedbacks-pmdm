@@ -31,7 +31,7 @@ Isso funciona porque:
 2. **Acessa**: O binding `DB` do Cloudflare D1
 3. **Executa**: A query SQL preparada:
    ```sql
-   SELECT id, tipo, regiao, unidade, nota, descricao, nome, telefone
+   SELECT id, tipo, regiao, unidade, nota, descricao, created_at
    FROM feedbacks
    ORDER BY id DESC
    LIMIT 1000
@@ -46,8 +46,7 @@ Isso funciona porque:
        "unidade": "CENTRO MUNICIPAL DE SAÚDE",
        "nota": 1,
        "descricao": "Meu médico estava marcado para determinado horário",
-       "nome": null,
-       "telefone": null
+       "created_at": "2026-11-13T12:00:00.000Z"
      }
    ]
    ```
@@ -126,9 +125,21 @@ CREATE TABLE IF NOT EXISTS feedbacks (
   nota INTEGER NOT NULL,
   descricao TEXT NOT NULL,
   nome TEXT,
-  telefone TEXT
+  telefone TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+Se a tabela já existir sem a coluna `created_at`, execute a migração abaixo e
+preencha as datas dos registros existentes conforme a fonte original dos dados:
+
+```sql
+ALTER TABLE feedbacks ADD COLUMN created_at TEXT;
+```
+
+A aplicação que insere novos feedbacks também deve preencher `created_at`.
+Preencha os registros existentes com datas válidas antes de usar a versão nova
+do endpoint; registros sem data válida causam erro na leitura do histórico.
 
 ### Passo 3: Inserir Dados de Teste
 
@@ -163,8 +174,7 @@ INSERT INTO feedbacks (tipo, regiao, unidade, nota, descricao, nome, telefone) V
     "unidade": "CENTRO MUNICIPAL DE SAÚDE",
     "nota": 6,
     "descricao": "Segundo feedback",
-    "nome": null,
-    "telefone": null
+    "created_at": "2026-11-13T12:00:00.000Z"
   },
   {
     "id": 1,
@@ -173,8 +183,7 @@ INSERT INTO feedbacks (tipo, regiao, unidade, nota, descricao, nome, telefone) V
     "unidade": "CENTRO MUNICIPAL DE SAÚDE",
     "nota": 10,
     "descricao": "Primeiro feedback",
-    "nome": null,
-    "telefone": null
+    "created_at": "2026-11-12T12:00:00.000Z"
   }
 ]
 ```
@@ -216,10 +225,12 @@ interface Feedback {
   unidade: string
   nota: number
   descricao: string
-  nome: string | null
-  telefone: string | null
+  created_at: string
 }
 ```
+
+A página exibe a data e o horário de cada feedback. O estado lido/não lido é
+salvo no armazenamento local do navegador e identificado pelo ID do feedback.
 
 ---
 
